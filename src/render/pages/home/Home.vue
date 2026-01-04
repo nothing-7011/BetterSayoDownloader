@@ -73,6 +73,48 @@
               </el-checkbox-group>
             </td>
           </tr>
+          <tr>
+            <td class="condition-header" width="60">难度</td>
+            <td class="condition-content" style="padding-right: 15px">
+              <el-slider v-model="filter.stars" range :max="MAX_STARS" :step="0.1" size="small" />
+            </td>
+          </tr>
+          <tr>
+            <td class="condition-header" width="60">CS</td>
+            <td class="condition-content" style="padding-right: 15px">
+              <el-slider v-model="filter.cs" range :max="MAX_CS" :step="0.1" size="small" />
+            </td>
+          </tr>
+          <tr>
+            <td class="condition-header" width="60">AR</td>
+            <td class="condition-content" style="padding-right: 15px">
+              <el-slider v-model="filter.ar" range :max="MAX_AR" :step="0.1" size="small" />
+            </td>
+          </tr>
+          <tr>
+            <td class="condition-header" width="60">OD</td>
+            <td class="condition-content" style="padding-right: 15px">
+              <el-slider v-model="filter.od" range :max="MAX_OD" :step="0.1" size="small" />
+            </td>
+          </tr>
+          <tr>
+            <td class="condition-header" width="60">HP</td>
+            <td class="condition-content" style="padding-right: 15px">
+              <el-slider v-model="filter.hp" range :max="MAX_HP" :step="0.1" size="small" />
+            </td>
+          </tr>
+          <tr>
+            <td class="condition-header" width="60">BPM</td>
+            <td class="condition-content" style="padding-right: 15px">
+              <el-slider v-model="filter.bpm" range :max="MAX_BPM" :step="1" size="small" />
+            </td>
+          </tr>
+          <tr>
+            <td class="condition-header" width="60">时长</td>
+            <td class="condition-content" style="padding-right: 15px">
+              <el-slider v-model="filter.length" range :max="MAX_LENGTH" :step="1" size="small" :format-tooltip="formatTime" />
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -174,6 +216,14 @@ export default {
     let modalMap: Ref<IBeatmapSet | undefined> = ref(undefined);
     let modalBid: Ref<number | undefined> = ref(undefined);
 
+    const MAX_STARS = 15;
+    const MAX_CS = 10;
+    const MAX_AR = 10;
+    const MAX_OD = 10;
+    const MAX_HP = 10;
+    const MAX_BPM = 360;
+    const MAX_LENGTH = 900;
+
     let keyword = ref("");
     if (store.has("searchKeyword")) {
       keyword.value = store.get("searchKeyword");
@@ -183,16 +233,26 @@ export default {
       approved: [],
       language: [],
       genre: [],
-      stars: [0, 0],
-      cs: [0, 0],
-      ar: [0, 0],
-      od: [0, 0],
-      hp: [0, 0],
-      bpm: [0, 0],
-      length: [0, 0],
+      stars: [0, MAX_STARS],
+      cs: [0, MAX_CS],
+      ar: [0, MAX_AR],
+      od: [0, MAX_OD],
+      hp: [0, MAX_HP],
+      bpm: [0, MAX_BPM],
+      length: [0, MAX_LENGTH],
     });
     if (store.has("searchFilter")) {
-      filter = reactive(store.get("searchFilter"));
+      const stored = store.get("searchFilter");
+      // Migration for old [0, 0] values to full range
+      if (stored.stars && stored.stars[1] === 0) stored.stars = [0, MAX_STARS];
+      if (stored.cs && stored.cs[1] === 0) stored.cs = [0, MAX_CS];
+      if (stored.ar && stored.ar[1] === 0) stored.ar = [0, MAX_AR];
+      if (stored.od && stored.od[1] === 0) stored.od = [0, MAX_OD];
+      if (stored.hp && stored.hp[1] === 0) stored.hp = [0, MAX_HP];
+      if (stored.bpm && stored.bpm[1] === 0) stored.bpm = [0, MAX_BPM];
+      if (stored.length && stored.length[1] === 0) stored.length = [0, MAX_LENGTH];
+
+      filter = reactive(stored);
     }
     const limit = ref(20);
     let page = ref(0);
@@ -201,11 +261,14 @@ export default {
     const isFilterArrayEmpty = (arr: any[] | undefined): boolean => {
       return arr?.length === 0;
     };
-    const isFilterArray2Empty = (
-      arr: [number, number] | undefined
-    ): boolean => {
-      return arr?.reduce((p, v) => (p += v), 0) === 0;
+
+    const isFilterIgnored = (arr: [number, number] | undefined, max: number): boolean => {
+      if (!arr) return true;
+      if (arr[0] === 0 && arr[1] === 0) return true;
+      if (arr[0] === 0 && arr[1] === max) return true;
+      return false;
     };
+
     const isFilterEmpty = (): boolean => {
       let result = true;
       result &&= keyword.value.length === 0;
@@ -213,13 +276,13 @@ export default {
       result &&= filter.approved?.length === 0;
       result &&= filter.language?.length === 0;
       result &&= filter.genre?.length === 0;
-      result &&= filter.stars?.reduce((p, v) => (p += v), 0) === 0;
-      result &&= filter.cs?.reduce((p, v) => (p += v), 0) === 0;
-      result &&= filter.ar?.reduce((p, v) => (p += v), 0) === 0;
-      result &&= filter.od?.reduce((p, v) => (p += v), 0) === 0;
-      result &&= filter.hp?.reduce((p, v) => (p += v), 0) === 0;
-      result &&= filter.length?.reduce((p, v) => (p += v), 0) === 0;
-      result &&= filter.bpm?.reduce((p, v) => (p += v), 0) === 0;
+      result &&= isFilterIgnored(filter.stars, MAX_STARS);
+      result &&= isFilterIgnored(filter.cs, MAX_CS);
+      result &&= isFilterIgnored(filter.ar, MAX_AR);
+      result &&= isFilterIgnored(filter.od, MAX_OD);
+      result &&= isFilterIgnored(filter.hp, MAX_HP);
+      result &&= isFilterIgnored(filter.length, MAX_LENGTH);
+      result &&= isFilterIgnored(filter.bpm, MAX_BPM);
       return result;
     };
     const onSearch = async () => {
@@ -302,13 +365,13 @@ export default {
           (sum: number, num: number) => (sum += num),
           0
         );
-      if (!isFilterArray2Empty(filter.stars)) obj.stars = filter.stars;
-      if (!isFilterArray2Empty(filter.ar)) obj.ar = filter.ar;
-      if (!isFilterArray2Empty(filter.cs)) obj.cs = filter.cs;
-      if (!isFilterArray2Empty(filter.hp)) obj.hp = filter.hp;
-      if (!isFilterArray2Empty(filter.od)) obj.od = filter.od;
-      if (!isFilterArray2Empty(filter.bpm)) obj.bpm = filter.bpm;
-      if (!isFilterArray2Empty(filter.length)) obj.length = filter.length;
+      if (!isFilterIgnored(filter.stars, MAX_STARS)) obj.stars = filter.stars;
+      if (!isFilterIgnored(filter.ar, MAX_AR)) obj.ar = filter.ar;
+      if (!isFilterIgnored(filter.cs, MAX_CS)) obj.cs = filter.cs;
+      if (!isFilterIgnored(filter.hp, MAX_HP)) obj.hp = filter.hp;
+      if (!isFilterIgnored(filter.od, MAX_OD)) obj.od = filter.od;
+      if (!isFilterIgnored(filter.bpm, MAX_BPM)) obj.bpm = filter.bpm;
+      if (!isFilterIgnored(filter.length, MAX_LENGTH)) obj.length = filter.length;
       return obj;
     };
 
@@ -337,6 +400,12 @@ export default {
       }
     };
 
+    const formatTime = (val: number) => {
+      const m = Math.floor(val / 60);
+      const s = val % 60;
+      return `${m}:${s < 10 ? '0' + s : s}`;
+    };
+
     onMounted(async () => {
       await onSearch();
       autoload.value = true;
@@ -362,10 +431,18 @@ export default {
       modalMap,
       modalVisible,
       modalBid,
+      MAX_STARS,
+      MAX_CS,
+      MAX_AR,
+      MAX_OD,
+      MAX_HP,
+      MAX_BPM,
+      MAX_LENGTH,
       // methods
       showDetail,
       onSearch,
       loadMore,
+      formatTime,
       // constants
       filterBtnClass,
       modeOptions: OsuConstant.mode,
