@@ -17,7 +17,8 @@ echo [2/4] Cleaning previous builds...
 if exist dist rd /s /q dist
 
 echo [3/4] Building Frontend (Vue)...
-call npm run build:vue
+:: Use npx vite build directly to avoid missing script errors
+call npx vite build
 if %errorlevel% neq 0 (
     echo Failed to build Vue frontend.
     pause

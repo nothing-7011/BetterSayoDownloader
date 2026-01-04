@@ -12,7 +12,8 @@ echo "[2/4] Cleaning previous builds..."
 rm -rf dist
 
 echo "[3/4] Building Frontend (Vue)..."
-npm run build:vue
+# Use npx vite build directly to avoid missing script errors
+npx vite build
 
 echo "[4/4] Building Backend (Main) and Packaging..."
 # Compile the main process TypeScript
