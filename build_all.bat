@@ -14,10 +14,10 @@ if %errorlevel% neq 0 (
 )
 
 echo [2/4] Cleaning previous builds...
-call npx rimraf dist
+call yarn run rimraf dist
 
 echo [3/4] Building Frontend (Vue)...
-call npm run build:vue
+call yarn run build:vue
 if %errorlevel% neq 0 (
     echo Failed to build Vue frontend.
     pause
