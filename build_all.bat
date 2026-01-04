@@ -17,7 +17,7 @@ echo [2/4] Cleaning previous builds...
 if exist dist rd /s /q dist
 
 echo [3/4] Building Frontend (Vue)...
-call yarn build:vue
+call npm run build:vue
 if %errorlevel% neq 0 (
     echo Failed to build Vue frontend.
     pause
@@ -25,8 +25,9 @@ if %errorlevel% neq 0 (
 )
 
 echo [4/4] Building Backend (Main) and Packaging...
-:: Compile the main process TypeScript using yarn node for PnP support
-call yarn node -r ts-node/register script/build-main --env=production
+:: Compile the main process TypeScript
+:: We use node directly here to avoid yarn/npm script lookup issues
+call node -r ts-node/register script/build-main --env=production
 if %errorlevel% neq 0 (
     echo Failed to build main process.
     pause
@@ -34,7 +35,8 @@ if %errorlevel% neq 0 (
 )
 
 :: Run electron-builder for all targets
-call yarn electron-builder --win --mac --linux
+:: We use npx to execute the binary from node_modules
+call npx electron-builder --win --mac --linux
 if %errorlevel% neq 0 (
     echo Failed to package application.
     pause
